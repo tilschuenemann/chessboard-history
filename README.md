@@ -21,4 +21,4 @@ pgn = "1. e4 e5 2. Qf3 Nc6 3. Bc4 Nf6 4. Ne2 Bc5 5. a3 d6 6. O-O Bg4 7. Qd3 Nh5 
 ch = ChessboardHistory()
 ch.print_history(pgn,"#ff0000",fade_function="last2")
 ```
-![Evenly rising opacity among all moves.](evenly.svg)
+![Evenly rising opacity among all moves.](last2.svg)
