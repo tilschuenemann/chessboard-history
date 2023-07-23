@@ -1,11 +1,12 @@
 import io
+import re
 from pathlib import Path
-import numpy as np
+from typing import List
+
 import chess
+import numpy as np
 from chess.pgn import read_game
 from chess.svg import Arrow
-import re
-from typing import List
 
 
 class ChessboardHistory:
@@ -14,9 +15,11 @@ class ChessboardHistory:
 
     def _hex_wrapper(self, input: List[int]) -> List[str]:
         """Transform a list of ints in range 0-255 to the last two digits of their hex representation."""
+        if any([x for x in input if x not in range(255)]):
+            raise ValueError("Only ints in [0-255] supported!")
+
         l = [f"{x:#0{4}x}" for x in input]
         l = [x[-2:] for x in l]
-        print(l)
         return l
 
     def _gen_evenly(self, len: int) -> List[str]:
@@ -40,23 +43,25 @@ class ChessboardHistory:
         l = l + [192 for _ in range(n)]
         return self._hex_wrapper(l)
 
-    def print_history(self, pgn: str, rgb: str, fade_function: str = "evenly") -> None:
+    def print_history(self, pgn: str, rgb: str, output_path: Path, fade_function: str = "evenly") -> None:
         """
         Args:
             pgn:
             rgb:
             fade_function: "evenly", "last2"
         """
+        if output_path.exists() is False or output_path.is_dir() is False:
+            raise ValueError("Please provide a proper OUTPUT_PATH!")
+
         if fade_function not in ["evenly", "last2"]:
-            raise Exception("Please provide a proper FADE_FUNCTION!")
+            raise ValueError("Please provide a proper FADE_FUNCTION!")
 
         hex_rgb_pat = r"^#(?:[0-9a-fA-F]{3}){1,2}$"
         if re.match(hex_rgb_pat, rgb) is None:
-            raise Exception("Please provide a valid RGB value!")
+            raise ValueError("Please provide a valid RGB value!")
         self.rgb = rgb
 
-        pgn = io.StringIO(pgn)
-        self.game = read_game(pgn)
+        self.game = read_game(io.StringIO(pgn))
 
         arrows = []
         board = self.game.board()
@@ -76,11 +81,5 @@ class ChessboardHistory:
 
         board_svg = chess.svg.board(board, arrows=arrows, size=350)
 
-        with open(Path().cwd() / "chess_history.svg", "w") as f:
+        with open(Path(output_path / "chess_history.svg"), "w") as f:
             f.write(board_svg)
-
-
-if __name__ == "__main__":
-    pgn = "1. e4 e5 2. Qf3 Nc6 3. Bc4 Nf6 4. Ne2 Bc5 5. a3 d6 6. O-O Bg4 7. Qd3 Nh5 8. h3 Bxe2 9. Qxe2 Nf4 10. Qe1 Nd4 11. Bb3 Nxh3+ 12. Kh2 Qh4 13. g3 Nf3+ 14. Kg2 Nxe1+ 15. Rxe1 Qg4 16. d3 Bxf2 17. Rh1 Qxg3+ 18. Kf1 Bd4 19. Ke2 Qg2+ 20. Kd1 Qxh1+ 21. Kd2 Qg2+ 22. Ke1 Ng1 23. Nc3 Bxc3+ 24. bxc3 Qe2#"
-    ch = ChessboardHistory()
-    ch.print_history(pgn, "#ff0000", fade_function="evenly")
